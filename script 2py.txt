@@ -1,0 +1,42 @@
+import discord
+from discord.ext import commands
+import os
+
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user}')
+
+@bot.command()
+async def show_menu(ctx):
+    options = [
+        discord.ui.Button(style=discord.ButtonStyle.green, label='Get Auth Code Login!', url='https://www.epicgames.com/id/api/redirect?clientId=3446cd72694c4a4485d81b77adbb2141&responseType=code'),
+        discord.ui.Button(style=discord.ButtonStyle.blurple, label='Submit Auth Code!'),
+        discord.ui.Button(style=discord.ButtonStyle.red, label='Help!')
+    ]
+
+    view = discord.ui.View()
+    for option in options:
+        view.add_item(option)
+
+    message = await ctx.send('Choose an option:', view=view)
+
+    def check(interaction):
+        return interaction.user == ctx.author
+
+    try:
+        interaction = await bot.wait_for('button_click', check=check, timeout=60)  # Adding timeout to ensure the interaction is processed within a timeframe
+    except asyncio.TimeoutError:
+        return await ctx.send("You did not make a selection in time.")
+
+    if interaction.component.label == 'Get Auth Code Login!':
+        embed = discord.Embed(title='Check out this link!', url='https://www.epicgames.com/id/api/redirect?clientId=3446cd72694c4a4485d81b77adbb2141&responseType=code',
+                              description='Click the link above to visit the website!')
+        await interaction.response.send_message("", embed=embed)
+    else:
+        await interaction.response.send_message(f'You selected {interaction.component.label}', ephemeral=True)
+
+bot.run(os.environ['TOKEN'])
